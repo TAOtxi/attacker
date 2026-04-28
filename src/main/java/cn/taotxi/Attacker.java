@@ -18,7 +18,9 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -35,6 +37,9 @@ public class Attacker implements ModInitializer {
     private static int delay = 10;
     private static int ticker = 0;
     private static String attackTarget = "";
+    private static boolean isAttackAll = false;
+    private static int maxAttackCount = 10;
+    private static boolean isDebug = false;
 
 	// This logger is used to write text to the console and the log file.
 	// It is considered best practice to use your mod id as the logger's name.
@@ -75,7 +80,7 @@ public class Attacker implements ModInitializer {
                 return 1;
             }))
             .then(ClientCommandManager.literal("it")
-                .then(ClientCommandManager.argument("interval", IntegerArgumentType.integer())
+                .then(ClientCommandManager.argument("interval", IntegerArgumentType.integer(1))
                     .executes(context -> {
                         attackInterval = IntegerArgumentType.getInteger(context, "interval");
                         return 1;
@@ -83,7 +88,7 @@ public class Attacker implements ModInitializer {
                 )
             )
             .then(ClientCommandManager.literal("range")
-                .then(ClientCommandManager.argument("range", DoubleArgumentType.doubleArg())
+                .then(ClientCommandManager.argument("range", DoubleArgumentType.doubleArg(0.0))
                     .executes(context -> {
                         attackRange = DoubleArgumentType.getDouble(context, "range");
                         return 1;
@@ -91,7 +96,7 @@ public class Attacker implements ModInitializer {
                 )
             )
             .then(ClientCommandManager.literal("delay")
-                .then(ClientCommandManager.argument("delay", IntegerArgumentType.integer())
+                .then(ClientCommandManager.argument("delay", IntegerArgumentType.integer(0))
                     .executes(context -> {
                         delay = IntegerArgumentType.getInteger(context, "delay");
                         return 1;
@@ -105,6 +110,34 @@ public class Attacker implements ModInitializer {
                         return 1;
                     })
                 )
+            )
+            .then(ClientCommandManager.literal("all")
+                .then(ClientCommandManager.literal("on").executes(context -> {
+                    isAttackAll = true;
+                    return 1;
+                }))
+                .then(ClientCommandManager.literal("off").executes(context -> {
+                    isAttackAll = false;
+                    return 1;
+                }))
+            )
+            .then(ClientCommandManager.literal("maxCount")
+                .then(ClientCommandManager.argument("maxCount", IntegerArgumentType.integer(1))
+                    .executes(context -> {
+                        maxAttackCount = IntegerArgumentType.getInteger(context, "maxCount");
+                        return 1;
+                    })
+                )
+            )
+            .then(ClientCommandManager.literal("debug")
+                .then(ClientCommandManager.literal("on").executes(context -> {
+                    isDebug = true;
+                    return 1;
+                }))
+                .then(ClientCommandManager.literal("off").executes(context -> {
+                    isDebug = false;
+                    return 1;
+                }))
             )
             .then(ClientCommandManager.literal("to").executes(context -> {
                 Entity targetEntity = context.getSource().getClient().crosshairPickEntity;
@@ -139,7 +172,34 @@ public class Attacker implements ModInitializer {
         return null;
     }
 
+    private List<Entity> getAttackList() {
+        Minecraft mc = Minecraft.getInstance();
+        AABB attackArea = mc.player.getBoundingBox().inflate(attackRange * 1.5);
+        List<Entity> attackList = new ArrayList<>();
+        for (Entity entity : mc.level.getEntities(mc.player, attackArea)) {
+            if (canAttack(mc.player, entity)) {
+                System.out.println("Add to attack list: " + entity.getName());
+                attackList.add(entity);
+            }
+        }
+        if (attackList.size() > maxAttackCount) {
+            attackList.subList(maxAttackCount, attackList.size()).clear();
+        }
+        return attackList;
+    }
+
     private boolean canAttack(Player player, Entity entity) {
+        if (isDebug) {
+            System.out.println("In waitList: " + waitList.containsKey(entity));
+            System.out.println("Name: " + entity.getName());
+            System.out.println("Type: " + entity.getType().toShortString());
+            System.out.println("isAlive: " + entity.isAlive());
+            System.out.println("isRemoved: " + entity.isRemoved());
+            System.out.println("In attack range: " + (entity.distanceToSqr(player) < attackRange * attackRange));
+            System.out.println("isAttackable: " + entity.isAttackable());
+            System.out.println("\n");
+        }
+
         if (waitList.containsKey(entity)) {
             if (waitList.get(entity) + delay >= ticker) {
                 return false;
@@ -161,7 +221,7 @@ public class Attacker implements ModInitializer {
             entity != player &&
             entity.isAlive() && 
             !entity.isRemoved() &&
-            !(entity instanceof LivingEntity) &&
+            entity instanceof LivingEntity &&
             !(entity instanceof Player) && 
             !(entity instanceof ItemEntity) && 
             entity.isAttackable() &&
@@ -170,6 +230,19 @@ public class Attacker implements ModInitializer {
 
     private void tryToAttack() {
         Minecraft mc = Minecraft.getInstance();
+        if (isAttackAll) {
+            List<Entity> attackList = getAttackList();
+            if (attackList.isEmpty()) {
+                return;
+            }
+            for (Entity entity : attackList) {
+                mc.gameMode.attack(mc.player, entity);
+                waitList.put(entity, ticker);
+            }
+            mc.player.swing(InteractionHand.MAIN_HAND);
+            return;
+        }
+
         Entity target = getAttackTarget();
         if (target == null) {
             return;
