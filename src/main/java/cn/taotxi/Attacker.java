@@ -30,13 +30,13 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;;
 public class Attacker implements ModInitializer {
 	public static final String MOD_ID = "attacker";
     private static List<Entity> attackList = new ArrayList<>();
+    private static Map<Entity, Integer> waitList = new HashMap<>();
     private static boolean isAttacking = false;
     private static int attackInterval = 1;
     private static double attackRange = 2.5;
     private static int delay = 10;
     private static int ticker = 0;
     private static String attackTarget = "";
-    private static Map<Entity, Integer> waitList = new HashMap<>();
 
 	// This logger is used to write text to the console and the log file.
 	// It is considered best practice to use your mod id as the logger's name.
@@ -126,11 +126,7 @@ public class Attacker implements ModInitializer {
         Minecraft mc = Minecraft.getInstance();
         attackList.clear();
         AABB attackArea = mc.player.getBoundingBox().inflate(attackRange * 1.5);
-        for (Entity entity : mc.level.getEntities(mc.player, attackArea)) {
-            if (canAttack(mc.player, entity)) {
-                attackList.add(entity);
-            }
-        }
+        attackList = mc.level.getEntities(mc.player, attackArea);
     }
 
     private boolean canAttack(Player player, Entity entity) {
@@ -172,7 +168,7 @@ public class Attacker implements ModInitializer {
                     attackList.clear();
                     break;
                 };
-                attackList = attackList.subList(cutIndex, attackList.size());
+                attackList.subList(0, cutIndex).clear();
                 break;
             }
         }
