@@ -30,6 +30,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;;
 
+// TODO: 拆分代码
 // TODO: 使用配置文件存储配置
 public class Attacker implements ModInitializer {
 	public static final String MOD_ID = "attacker";

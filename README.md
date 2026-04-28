@@ -1,9 +1,27 @@
 # attacker
+## 模组介绍
+这个是宇宙超级无敌伟大的拾玖光环！！！！！！！
+欢迎加群游玩拾玖世界服务器，群号：518271249
 
-## Setup
+## 它能干什么？
+因为生物有着伤害免疫，一堆生物堆在一起时，往往只能打到几个生物，剩余的攻击都被前面生物的伤害免疫给取消掉了。
+此模组专门用于解决此问题，其实是我用来刷mmo等级的，嘻嘻。
+模组可以支持范围攻击和单目标攻击，详细的指令可以看下面。
 
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
+> 设置参数要谨慎
+> 被封不关我事 😈😈😈😈
 
-## License
+```bash
+/at on/off                 # 开启或关闭光环功能。
+/at it [int]               # 设置攻击间隔，单位为gt。默认为1gt。
+/at range [double]         # 设置攻击范围，默认为2.5。
+/at delay [int]            # 下一次攻击同一生物的最小时间间隔，默认为10gt（也就是伤害免疫时间）。
+/at to                     # 将攻击目标设置为准星指向的实体。
+/at target [string]        # 设置攻击目标的id, 详细ID请查询wiki。
+/at all on/off             # 范围攻击开关，在一个运行周期内攻击所有符合条件的目标。关闭后一个周期只攻击一个目标。
+/at maxCount [int]         # 一个运行周期内攻击的最大目标数量，默认为10，-1代表全部。
+/at debug on/off           # 开关，是否开启调试模式（控制台输出）。
+```
 
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+## 参与
+欢迎提交PR，其实还有一大堆 TODO。😁😁😁
