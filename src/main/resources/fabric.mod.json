@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "attacker",
+	"version": "${version}",
+	"name": "attacker",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/attacker/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"cn.taotxi.Attacker"
+		]
+	},
+	"mixins": [
+		"attacker.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
