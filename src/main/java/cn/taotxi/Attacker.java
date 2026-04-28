@@ -10,6 +10,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,9 +18,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -29,7 +28,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;;
 
 public class Attacker implements ModInitializer {
 	public static final String MOD_ID = "attacker";
-    private static List<Entity> attackList = new ArrayList<>();
     private static Map<Entity, Integer> waitList = new HashMap<>();
     private static boolean isAttacking = false;
     private static int attackInterval = 1;
@@ -60,7 +58,7 @@ public class Attacker implements ModInitializer {
             }
             ticker++;
             if (ticker % attackInterval == 0) {
-                attackEntities();
+                tryToAttack();
             }
         });
     }
@@ -108,25 +106,37 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
+            .then(ClientCommandManager.literal("to").executes(context -> {
+                Entity targetEntity = context.getSource().getClient().crosshairPickEntity;
+                if (targetEntity != null) {
+                    attackTarget = targetEntity.getType().toShortString();
+                    context.getSource().sendFeedback(Component.literal("Target set to " + attackTarget));
+                } else {
+                    context.getSource().sendFeedback(Component.literal("No entity under crosshair"));
+                    return 0;
+                }
+                return 1;
+            }))
         );
         });
     }
 
     private void registerWorldEvents() {
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((mc, level) -> {
-            attackList.clear();
             waitList.clear();
             isAttacking = false;
         });
     }
 
-
-
-    private void updateAttackList() {
+    private Entity getAttackTarget() {
         Minecraft mc = Minecraft.getInstance();
-        attackList.clear();
         AABB attackArea = mc.player.getBoundingBox().inflate(attackRange * 1.5);
-        attackList = mc.level.getEntities(mc.player, attackArea);
+        for (Entity entity : mc.level.getEntities(mc.player, attackArea)) {
+            if (canAttack(mc.player, entity)) {
+                return entity;
+            }
+        }
+        return null;
     }
 
     private boolean canAttack(Player player, Entity entity) {
@@ -137,7 +147,9 @@ public class Attacker implements ModInitializer {
                 waitList.remove(entity);
             }
         }
+
         if (!attackTarget.isEmpty() &&
+            entity != player &&
             entity.getType().toShortString().equals(attackTarget) &&
             entity.isAlive() &&
             !entity.isRemoved() &&
@@ -156,33 +168,15 @@ public class Attacker implements ModInitializer {
             entity.distanceToSqr(player) < attackRange * attackRange;
     }
 
-    private void attackEntities() {
+    private void tryToAttack() {
         Minecraft mc = Minecraft.getInstance();
-        for (int cutIndex = 0; cutIndex < attackList.size(); cutIndex++) {
-            Entity entity = attackList.get(cutIndex);
-            if (!canAttack(mc.player, entity)) {
-                cutIndex++;
-            } else {
-                if (cutIndex == 0) break;
-                if (cutIndex == attackList.size()) {
-                    attackList.clear();
-                    break;
-                };
-                attackList.subList(0, cutIndex).clear();
-                break;
-            }
+        Entity target = getAttackTarget();
+        if (target == null) {
+            return;
         }
-        
-        if (attackList.isEmpty()) {
-            updateAttackList();
-            if (attackList.isEmpty()) {
-                return;
-            }
-        }
-        mc.gameMode.attack(mc.player, attackList.get(0));
+                
+        mc.gameMode.attack(mc.player, target);
         mc.player.swing(InteractionHand.MAIN_HAND);
-        Entity target = attackList.get(0);
-        attackList.remove(target);
         waitList.put(target, ticker);
     }
 }
