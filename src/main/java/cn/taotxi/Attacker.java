@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 
 import net.minecraft.client.Minecraft;
@@ -24,6 +25,7 @@ import java.util.Map;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;;
 
 public class Attacker implements ModInitializer {
 	public static final String MOD_ID = "attacker";
@@ -33,6 +35,7 @@ public class Attacker implements ModInitializer {
     private static double attackRange = 2.5;
     private static int delay = 10;
     private static int ticker = 0;
+    private static String attackTarget = "";
     private static Map<Entity, Integer> waitList = new HashMap<>();
 
 	// This logger is used to write text to the console and the log file.
@@ -44,6 +47,7 @@ public class Attacker implements ModInitializer {
 	public void onInitialize() {
 		registerTickEvents();
 		registerCommand();
+		registerWorldEvents();
 	}
 
     private void registerTickEvents() {
@@ -96,9 +100,27 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
+            .then(ClientCommandManager.literal("target")
+                .then(ClientCommandManager.argument("target", StringArgumentType.string())
+                    .executes(context -> {
+                        attackTarget = StringArgumentType.getString(context, "target");
+                        return 1;
+                    })
+                )
+            )
         );
         });
     }
+
+    private void registerWorldEvents() {
+        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((mc, level) -> {
+            attackList.clear();
+            waitList.clear();
+            isAttacking = false;
+        });
+    }
+
+
 
     private void updateAttackList() {
         Minecraft mc = Minecraft.getInstance();
@@ -118,6 +140,13 @@ public class Attacker implements ModInitializer {
             } else {
                 waitList.remove(entity);
             }
+        }
+        if (!attackTarget.isEmpty() &&
+            entity.getType().toShortString().equals(attackTarget) &&
+            entity.isAlive() &&
+            !entity.isRemoved() &&
+            entity.distanceToSqr(player) < attackRange * attackRange) {
+            return true;
         }
 
         return 
