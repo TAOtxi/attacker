@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -234,6 +234,7 @@ public class Attacker implements ModInitializer {
             System.out.println("In waitList: " + waitList.containsKey(entity));
             System.out.println("Name: " + entity.getName());
             System.out.println("Type: " + entity.getType().toShortString());
+            System.out.println("isTarget: " + entity.getType().toShortString().equals(attackTarget));
             System.out.println("isAlive: " + entity.isAlive());
             System.out.println("isRemoved: " + entity.isRemoved());
             System.out.println("In attack range: " + (entity.distanceToSqr(player) < attackRange * attackRange));
@@ -249,23 +250,16 @@ public class Attacker implements ModInitializer {
             }
         }
 
-        if (!attackTarget.isEmpty() &&
-            entity != player &&
-            entity.getType().toShortString().equals(attackTarget) &&
-            entity.isAlive() &&
-            !entity.isRemoved() &&
-            entity.distanceToSqr(player) < attackRange * attackRange) {
-            return true;
-        }
+        boolean isTarget = attackTarget.isEmpty() ||
+                        (!attackTarget.isEmpty() && entity.getType().toShortString().equals(attackTarget));
 
         // TODO: 优化实体的选择范围
         return 
-            entity != player &&
-            entity.isAlive() && 
+            entity instanceof Mob &&
+            !(entity instanceof Player) &&
+            isTarget &&
+            entity.isAlive() &&
             !entity.isRemoved() &&
-            entity instanceof LivingEntity &&
-            !(entity instanceof Player) && 
-            !(entity instanceof ItemEntity) && 
             entity.isAttackable() &&
             entity.distanceToSqr(player) < attackRange * attackRange;
     }
