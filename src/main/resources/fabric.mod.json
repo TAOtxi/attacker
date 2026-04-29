@@ -3,17 +3,18 @@
 	"id": "attacker",
 	"version": "${version}",
 	"name": "attacker",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "宇宙超级无敌伟大的拾玖光环！！！",
 	"authors": [
-		"Me!"
+		"宇宙第一无敌的TAOtxi大人"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+        "email": "mar1mo@qq.com",
+		"homepage": "https://github.com/TAOtxi/",
+		"sources": "https://github.com/TAOtxi/attacker"
 	},
-	"license": "CC0-1.0",
+	"license": "GPL-3.0",
 	"icon": "assets/attacker/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"main": [
 			"cn.taotxi.Attacker"
