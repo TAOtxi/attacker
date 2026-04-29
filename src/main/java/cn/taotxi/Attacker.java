@@ -75,17 +75,19 @@ public class Attacker implements ModInitializer {
     // TODO: 语言国际化
     // TODO: 优化排版，附带多种颜色
     private static int showHelp(CommandContext<FabricClientCommandSource> context) {
-        context.getSource().sendFeedback(Component.literal("===========宇宙超级无敌伟大的拾玖光环==========="));
-        context.getSource().sendFeedback(Component.literal("/at on/off:          开启/关闭。当前状态：" + (isAttacking ? "on" : "off")));
-        context.getSource().sendFeedback(Component.literal("/at it <int>:        攻击间隔，单位为gt。默认1。当前值：" + attackInterval));
-        context.getSource().sendFeedback(Component.literal("/at range <double>:  攻击范围，默认2.5。当前值：" + attackRange));
-        context.getSource().sendFeedback(Component.literal("/at delay <int>:     下一次攻击同一生物的最小时间间隔，默认10gt（也就是伤害免疫时间）。当前值：" + delay));
-        context.getSource().sendFeedback(Component.literal("/at to:              将攻击目标设置为准星指向的实体。"));
+        context.getSource().sendFeedback(Component.literal("=========== 宇宙超级无敌伟大的拾玖光环 ==========="));
+        context.getSource().sendFeedback(Component.literal("/at help             显示此帮助信息。"));
+        context.getSource().sendFeedback(Component.literal("/at on/off           开启/关闭。当前状态：" + (isAttacking ? "on" : "off")));
+        context.getSource().sendFeedback(Component.literal("/at it <int>         攻击间隔，单位为gt。默认1。当前值：" + attackInterval));
+        context.getSource().sendFeedback(Component.literal("/at range <double>   攻击范围，默认2.5。当前值：" + attackRange));
+        context.getSource().sendFeedback(Component.literal("/at delay <int>      下一次攻击同一生物的最小时间间隔，默认10gt（也就是伤害免疫时间）。当前值：" + delay));
+        context.getSource().sendFeedback(Component.literal("/at to               将攻击目标设置为准星指向的实体。"));
         context.getSource().sendFeedback(Component.literal("/at target <string>  设置攻击目标的id, 详细ID请查询wiki。当前值：" + attackTarget));
         context.getSource().sendFeedback(Component.literal("/at all on/off       范围攻击，在一个运行周期内攻击所有符合条件的目标。关闭后一个周期只攻击一个目标。当前状态：" + (isAttackAll ? "on" : "off")));
-        context.getSource().sendFeedback(Component.literal("/at maxCount <int>:  一个运行周期内攻击的最大目标数量，默认10，-1代表全部。当前值：" + maxAttackCount));
+        context.getSource().sendFeedback(Component.literal("/at maxCount <int>   一个运行周期内攻击的最大目标数量，默认10，-1代表全部。当前值：" + maxAttackCount));
         context.getSource().sendFeedback(Component.literal("/at debug on/off     开关，是否开启调试模式（控制台输出）。当前状态：" + (isDebug ? "on" : "off")));
-        context.getSource().sendFeedback(Component.literal("============================================="));
+        context.getSource().sendFeedback(Component.literal("/at reset            重置配置。"));
+        context.getSource().sendFeedback(Component.literal("==============================================="));
         return 1;
     }
 
@@ -174,6 +176,20 @@ public class Attacker implements ModInitializer {
                     return 1;
                 }))
             )
+            .then(ClientCommandManager.literal("reset").executes(context -> {
+                isAttackAll = false;
+                maxAttackCount = 10;
+                attackTarget = "";
+                isDebug = false;
+                attackInterval = 1;
+                attackRange = 2.5;
+                delay = 10;
+                waitList.clear();
+                isAttacking = false;
+
+                context.getSource().sendFeedback(Component.literal("配置已重置"));
+                return 1;
+            }))
             .then(ClientCommandManager.literal("to").executes(context -> {
                 Entity targetEntity = context.getSource().getClient().crosshairPickEntity;
                 if (targetEntity != null) {
