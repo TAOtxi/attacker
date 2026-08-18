@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
@@ -24,11 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 
 // TODO: 拆分代码
 // TODO: 使用配置文件存储配置
@@ -94,21 +93,21 @@ public class Attacker implements ModInitializer {
     // TODO: 优化命令的代码结构，回调另外写成方法
     private static void registerCommand() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("at")
+            dispatcher.register(ClientCommands.literal("at")
             .executes(Attacker::showHelp)
-            .then(ClientCommandManager.literal("help").executes(Attacker::showHelp))
-            .then(ClientCommandManager.literal("on").executes(context -> {
+            .then(ClientCommands.literal("help").executes(Attacker::showHelp))
+            .then(ClientCommands.literal("on").executes(context -> {
                 isAttacking = true;
                 context.getSource().sendFeedback(Component.literal("拾玖光环已开启"));
                 return 1;
             }))
-            .then(ClientCommandManager.literal("off").executes(context -> {
+            .then(ClientCommands.literal("off").executes(context -> {
                 isAttacking = false;
                 context.getSource().sendFeedback(Component.literal("拾玖光环已关闭"));
                 return 1;
             }))
-            .then(ClientCommandManager.literal("it")
-                .then(ClientCommandManager.argument("interval", IntegerArgumentType.integer(1))
+            .then(ClientCommands.literal("it")
+                .then(ClientCommands.argument("interval", IntegerArgumentType.integer(1))
                     .executes(context -> {
                         attackInterval = IntegerArgumentType.getInteger(context, "interval");
                         context.getSource().sendFeedback(Component.literal("攻击间隔设置为：" + attackInterval));
@@ -116,8 +115,8 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
-            .then(ClientCommandManager.literal("range")
-                .then(ClientCommandManager.argument("range", DoubleArgumentType.doubleArg(0.0))
+            .then(ClientCommands.literal("range")
+                .then(ClientCommands.argument("range", DoubleArgumentType.doubleArg(0.0))
                     .executes(context -> {
                         attackRange = DoubleArgumentType.getDouble(context, "range");
                         context.getSource().sendFeedback(Component.literal("攻击范围设置为：" + attackRange));
@@ -125,8 +124,8 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
-            .then(ClientCommandManager.literal("delay")
-                .then(ClientCommandManager.argument("delay", IntegerArgumentType.integer(0))
+            .then(ClientCommands.literal("delay")
+                .then(ClientCommands.argument("delay", IntegerArgumentType.integer(0))
                     .executes(context -> {
                         delay = IntegerArgumentType.getInteger(context, "delay");
                         context.getSource().sendFeedback(Component.literal("攻击同一生物的最小时间间隔设置为：" + delay));
@@ -134,8 +133,8 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
-            .then(ClientCommandManager.literal("target")
-                .then(ClientCommandManager.argument("target", StringArgumentType.string())
+            .then(ClientCommands.literal("target")
+                .then(ClientCommands.argument("target", StringArgumentType.string())
                     .executes(context -> {
                         attackTarget = StringArgumentType.getString(context, "target");
                         context.getSource().sendFeedback(Component.literal("攻击目标设置为：" + attackTarget));
@@ -143,20 +142,20 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
-            .then(ClientCommandManager.literal("all")
-                .then(ClientCommandManager.literal("on").executes(context -> {
+            .then(ClientCommands.literal("all")
+                .then(ClientCommands.literal("on").executes(context -> {
                     isAttackAll = true;
                     context.getSource().sendFeedback(Component.literal("范围攻击已开启"));
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("off").executes(context -> {
+                .then(ClientCommands.literal("off").executes(context -> {
                     isAttackAll = false;
                     context.getSource().sendFeedback(Component.literal("范围攻击已关闭"));
                     return 1;
                 }))
             )
-            .then(ClientCommandManager.literal("maxCount")
-                .then(ClientCommandManager.argument("maxCount", IntegerArgumentType.integer(-1))
+            .then(ClientCommands.literal("maxCount")
+                .then(ClientCommands.argument("maxCount", IntegerArgumentType.integer(-1))
                     .executes(context -> {
                         maxAttackCount = IntegerArgumentType.getInteger(context, "maxCount");
                         context.getSource().sendFeedback(Component.literal("范围最大攻击数量设置为：" + maxAttackCount));
@@ -164,19 +163,19 @@ public class Attacker implements ModInitializer {
                     })
                 )
             )
-            .then(ClientCommandManager.literal("debug")
-                .then(ClientCommandManager.literal("on").executes(context -> {
+            .then(ClientCommands.literal("debug")
+                .then(ClientCommands.literal("on").executes(context -> {
                     isDebug = true;
                     context.getSource().sendFeedback(Component.literal("调试模式已开启"));
                     return 1;
                 }))
-                .then(ClientCommandManager.literal("off").executes(context -> {
+                .then(ClientCommands.literal("off").executes(context -> {
                     isDebug = false;
                     context.getSource().sendFeedback(Component.literal("调试模式已关闭"));
                     return 1;
                 }))
             )
-            .then(ClientCommandManager.literal("reset").executes(context -> {
+            .then(ClientCommands.literal("reset").executes(context -> {
                 isAttackAll = false;
                 maxAttackCount = 10;
                 attackTarget = "";
@@ -190,7 +189,7 @@ public class Attacker implements ModInitializer {
                 context.getSource().sendFeedback(Component.literal("配置已重置"));
                 return 1;
             }))
-            .then(ClientCommandManager.literal("to").executes(context -> {
+            .then(ClientCommands.literal("to").executes(context -> {
                 Entity targetEntity = context.getSource().getClient().crosshairPickEntity;
                 if (targetEntity != null) {
                     attackTarget = targetEntity.getType().toShortString();
@@ -206,7 +205,7 @@ public class Attacker implements ModInitializer {
     }
 
     private void registerWorldEvents() {
-        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((mc, level) -> {
+        ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((mc, level) -> {
             waitList.clear();
             isAttacking = false;    // TODO: 待斟酌变更世界后，是否需要关闭光环
         });
